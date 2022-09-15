@@ -1,18 +1,14 @@
+using IdentityServer4.Configuration;
 using IdentityServer4.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Notes.Identity;
 using Notes.Identity.Data;
 using Notes.Identity.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
-services.AddIdentityServer()
-    .AddInMemoryApiResources(Configuration.ApiResources)
-    .AddInMemoryIdentityResources(Configuration.IdentityResources)
-    .AddInMemoryApiScopes(Configuration.ApiScopes)
-    .AddInMemoryClients(Configuration.Clients)
-    .AddDeveloperSigningCredential();
 
 IConfiguration configuration = services.BuildServiceProvider()
     .GetRequiredService<IConfiguration>();
@@ -46,6 +42,8 @@ services.ConfigureApplicationCookie(config =>
     config.LogoutPath = "/Auth/Logout";
 });
 
+services.AddControllersWithViews();
+
 var app = builder.Build();
 var appServices = app.Services;
 
@@ -64,6 +62,17 @@ using (var scope = appServices.CreateScope())
     }
 }
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "Styles")),
+    RequestPath = "/styles"
+});
+app.UseRouting();
 app.UseIdentityServer();
-app.MapGet("/", () => "Hello World!");
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapDefaultControllerRoute();
+});
+
 app.Run();
